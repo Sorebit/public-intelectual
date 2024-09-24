@@ -17,3 +17,5 @@ insert_final_newline = true
 trim_trailing_whitespace = false
 indent_size = 4
 
+[*.py]
+indent_size = 4
