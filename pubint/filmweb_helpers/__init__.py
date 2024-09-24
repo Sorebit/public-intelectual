@@ -1,7 +1,9 @@
 """"""
 import json
 import requests
-import pydantic
+# import pydantic
+
+from typing import Iterable
 
 HEADERS = {
     # https://www.whatismybrowser.com/guides/the-latest-user-agent/firefox
@@ -25,13 +27,13 @@ class Cache:
 cache = Cache()
 
 
-class FilmHandle(str):
+class FilmHandle:
     FILM_HANDLE = '{}-{}-{}'
     
     def __str__(self):
-        return FILM_HANDLE.format(self.title, self.year, self.id_)
+        return self.FILM_HANDLE.format(self.title, self.year, self.id_)
 
-    def __init__(self, title, year, id_) -> FilmHandle:
+    def __init__(self, title, year, id_) -> 'FilmHandle':
         self.title, self.year, self.id_ = title, year, id_
 
 
@@ -41,28 +43,28 @@ class Film:
 
     handle: FilmHandle
     
-    def discusions(self) -> list[Topic]:
+    def discusions(self) -> list['Topic']:
         """This should be an iterable and doesnt concern itself with where the items come from"""
         
 
 class Topic:
     url: str
-    comments: Tree[Comment]
+    # comments: Tree[Comment]
     
     TOPIC = 'https://www.filmweb.pl/film/{}/discussion'
     TOPIC_PAGE_N = 'https://www.filmweb.pl/film/{}/discussion?plusMinus=true&page={}'
     
     def __init__(self, handle):
         self.handle = handle
-        self.url = make_topic_url()
+        self.url = self.make_topic_url()
     
     def make_topic_url(self, n=1) -> str:
         """n - pagination"""  
-        return TOPIC_PAGE_N.format(self.handle, n)
+        return self.TOPIC_PAGE_N.format(self.handle, n)
 
 
 class DiscussionPage:
-    comments: Iterable[Comment]
+    comments: Iterable['Comment']
     
     @classmethod
     def make_url(cls, film_handle, thread_handle) -> str:
@@ -127,9 +129,9 @@ def scrap(film_handle: FilmHandle, pages: list):
 # pagination__item pagination__item--next 
 # jak nie ma --next to koniec
 
-film_handle = make_film_handle('Uciekaj', '2017', '750704')
+film_handle = FilmHandle('Uciekaj', '2017', '750704')
 topic_handle = 'To+jest+thriller+nie+horror,2890869'
-scrap(film_handle, range(1, 4))
+# scrap(film_handle, range(1, 4))
 
 
 
