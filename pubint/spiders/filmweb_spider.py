@@ -1,29 +1,35 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, List
+from typing import TYPE_CHECKING, Any, Iterable, List, Callable
 
 import scrapy
 from scrapy.http import Request, Response
 
-from pubint.items import Topic
+from pubint.items import Topic, Comment
 from pubint.item_loaders import TopicLoader
 
 
 class FilmwebSpiderSpider(scrapy.Spider):
     name = "filmweb"
     allowed_domains = ["filmweb.pl"]
-    start_urls = []
+    start_urls: tuple[str, Callable] = []
+    """(url, callback)"""
     discussion_tmpl = "https://www.filmweb.pl/film/{}/discussion"
-    user_tmpl = "https://www.filmweb.pl/user/{}#/votes/film"
+    user_tmpl = "https://www.filmweb.pl/user/{}"
 
     def __init__(self, file: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.start_urls = [
+            # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Wisley+naprawde+kochal+Jane.,1131471', self.parse_topic)
+            # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Prawdziwsza+historia+mi%C5%82o%C5%9Bci+Jane+i+Toma,3114224', self.parse_topic)
+            ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/McAvoy,1605383', self.parse_topic)
+        ]
+        return
         if not file:
             raise ValueError(f"Expected file argument for spider {self.name}")
-        # Uciekaj-2017-750704
         self.load_start_urls(Path(file).expanduser())
 
     def load_start_urls(self, filename: str) -> None:
-        """Expects lines to be URLs"""
+        """Expects lines to be discussion URLs"""
         with open(filename) as file:
             for line in file:
                 url = line.strip()
@@ -32,16 +38,16 @@ class FilmwebSpiderSpider(scrapy.Spider):
                 if not url.startswith("http"):
                     url = self.discussion_tmpl.format(url)
                 self.log(f"Appending start URL {url}")
-                self.start_urls.append(url)
+                self.start_urls.append((url, self.parse_discussion))
 
     def start_requests(self) -> Iterable[Request]:
         """Assumes beginning from discussion pages"""
         self.log(f"Total number of start URLs: {len(self.start_urls)}")
-        for url in self.start_urls:
-            yield Request(url, dont_filter=True, callback=self.parse_discussion)
+        for url, callback in self.start_urls:
+            yield Request(url, dont_filter=True, callback=callback)
 
     def parse_discussion(self, response: Response):
-        """parse discussion page"""
+        """parse discussion i.e. page listing topics"""
         self.log("Parse as DISCUSSION url={}".format(response.url))
         return
 
@@ -57,61 +63,22 @@ class FilmwebSpiderSpider(scrapy.Spider):
             # response.follow allows using relative links
             yield response.follow(next_page, callback=self.parse_discussion)
 
-    def parse_other(self, response: Response):
-        self.log("Parse as OTHER url={}".format(response.url))
-        return
+    def parse_topic(self, response: Response):
+        self.log("Parse as TOPIC url={}".format(response.url))
+        comments = response.css('div.forumTopic')
+        item = Comment()  # TODO: loader
+        for i, comment_container in enumerate(comments):
+            item['topic_url'] = response.url
+            item['owner'] = comment_container.attrib.get('data-owner')
+            item['text'] = comment_container.css('p.forumTopic__text::text').extract()
+            item['indent'] = comment_container.attrib.get('data-indent')
+            item['post_id'] = comment_container.attrib.get('data-id')
+            item['order'] = i
+            item['reply_to'] = comment_container.css('.forumTopic__authorReply a::attr(href)').extract_first()
 
+            yield item
 
-
-
-"""Czyli problem jest aktualnie taki, że zapytanie w stylu https://www.filmweb.pl/user/kira_chan_123411#/votes/film
-Gdzie ta część po hashu nie jest zbyt istotna zwraca duużo za mało danych
-No ale zawsze coś
-W każdym razie dobrze by było z tego wyciągnąć te handle
-Bo czasem jest vod na przykład
-No i seriale są w oddzielnych zakładkach w sensie /serial/{handle}
-Wygląda to tak, jakby się w trakcie scrollowania doładowywały a z requestem przychodził pierwszy batch
-Co jest problematyczne
-
-/film/Aftermath.+Most+w+ogniu-2024-10059684
-/film/Akademia+Magii-2024-10054493
-/film/Anatomia+upadku-2023-10032723/vod
-/film/Bangkok+Breaking%3A+Mi%C4%99dzy+niebem+a+piek%C5%82em-2024-10059907
-/film/Batman-2022-626318/vod
-/film/Bokser-2024-10017699/vod
-/film/Brzydcy-2024-375638/vod
-/film/Dzikie+serce-2023-10040621
-/film/Fernando-2017-718863
-/film/Gotowi+na+wszystko.+Exterminator-2017-787951
-/film/Gra+o+wszystko-2017-774747
-/film/Historia+braci+Menendez%C3%B3w-2024-10061408
-/film/I+tak+ci%C4%99+kocham-2017-781068
-/film/Id%C5%BA+pod+pr%C4%85d-2024-10056847
-/film/Jego+trzy+c%C3%B3rki-2023-10041439/vod
-/film/Joker%3A+Folie+%C3%A0+deux-2024-10014539
-/film/Kliczko%3A+wi%C4%99cej+ni%C5%BC+walka-2024-10055295
-/film/Las-2024-10049220
-/film/M+jak+morderca-2017-787686
-/film/Marcello+Mio-2024-10040722
-/film/Miasteczko+Salem-2024-10001584
-/film/Naznaczony%3A+Ostatni+klucz-2018-751893
-/film/Nie+obiecujcie+sobie+zbyt+wiele+po+ko%C5%84cu+%C5%9Bwiata-2023-10038751
-/film/Party-2017-777179
-/film/Platforma+2-2024-10052749
-/film/Pogromcy+duch%C3%B3w%3A+Imperium+lodu-2024-10043538/vod
-/film/Prawdziwy+d%C5%BCentelmen-2024-10059904
-/film/Pszczelarz-2024-10042333/vod
-/film/Reagan-2024-630439
-/film/Rebel+Ridge-2024-10057562/vod
-/film/Rez+Ball-2024-10058502
-/film/Rozwodnicy-2024-10031660
-/film/Rzeczy+niezb%C4%99dne-2024-10055769
-/film/Smok+Diplodok-2024-761330
-/film/Sok+z+%C5%BCuka-1988-9641/vod
-/film/Studni%C3%B3wk%40-2018-648728
-/film/Wiecz%C3%B3r+kawalerski-2024-10024233/vod
-/film/Wszech%C5%9Bwiat+Oliviera-2022-10022572
-
-
-Okej to nawet nie jest pierwszy batch tylko kurczę jakieś popularne teraz filmy. Eh
-"""
+        next_page = response.css('.pagination__item--next a::attr(href)').extract_first()
+        if next_page:
+            # response.follow allows using relative links
+            yield response.follow(next_page, callback=self.parse_topic)

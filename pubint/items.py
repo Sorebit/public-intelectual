@@ -12,16 +12,28 @@ class Topic(scrapy.Item):
 
 
 class Comment(scrapy.Item):
+    """
+    to jest niby niepotrzebne, bo mamy po prosty div.forumTopic
+    topics = response.css('div.forumTopic')
+    for topic in topics:
+        topic.attrib -> {'id': 'post_5154360', 'class': 'forumTopic', 'data-id': '5154360', 'data-owner': 'Mril24', 'data-indent': '1'}
+    """
     topic_url = scrapy.Field()  # need to somehow bind comments to topic and construct a discussion
-    user = scrapy.Field()
-    user_url = scrapy.Field()
-    # order? liczba porządkowa
+    owner = scrapy.Field()
     text = scrapy.Field()
-    """css('p.forumTopic__text::text')"""
+    order = scrapy.Field()
+    indent = scrapy.Field()  # na razie zapisujemy indent i kolejność, to może wsm wystarczyć do oglądania i analizowania
+    post_id = scrapy.Field()
+    reply_to = scrapy.Field()
 
 
 # pierwszy post jest na chyba każdej stronie paginacji
-# .forumDiscussion__topic
-#   p.forumTopic__text::text
-# .forumDiscussion__replies
+
+#
 # paginacja taka sama
+# posty mają ID, które można po prostu dopisać po hashu żeby mieć pełny link
+# post_5154360 -> https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Wisley+naprawde+kochal+Jane.,1131471#post_5154360
+# ale na razie mi to niepotrzebne
+
+# powiedzmy że szukamy KotArystokrata
+# /user/KotArystokrata

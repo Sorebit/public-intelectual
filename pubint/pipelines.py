@@ -8,15 +8,30 @@
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 
+from pubint.items import Topic, Comment
+
 
 class MissingTopicUrl(DropItem):
     pass
 
 
+class Duplicate(DropItem):
+    pass
+
+
 class FilterTopicsPipeline:
     def process_item(self, item, spider):
-        adapter = ItemAdapter(item)
-        if adapter.get("url") is None:
-            raise MissingTopicUrl(f"Missing URL in topic {item}")
-
+        match item:
+            case Topic():
+                adapter = ItemAdapter(item)
+                if adapter.get("url") is None:
+                    raise MissingTopicUrl(f"Missing URL in topic {item}")
+            case Comment():
+                pass
+            case _:
+                pass
         return item
+
+
+class FilterDuplicatesPipeline:
+    """TODO"""
