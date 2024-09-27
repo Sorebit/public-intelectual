@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Iterable, List
 
 import scrapy
 from scrapy.http import Request, Response
@@ -11,26 +12,37 @@ class FilmwebSpiderSpider(scrapy.Spider):
     name = "filmweb"
     allowed_domains = ["filmweb.pl"]
     start_urls = []
+    discussion_tmpl = "https://www.filmweb.pl/film/{}/discussion"
+    user_tmpl = "https://www.filmweb.pl/user/{}#/votes/film"
 
-    def __init__(self, user: str = None, *args, **kwargs):
+    def __init__(self, file: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not user:
-            raise ValueError("Expected user argument for spider")
+        if not file:
+            raise ValueError(f"Expected file argument for spider {self.name}")
         # Uciekaj-2017-750704
-        self.start_urls = [
-            # f"https://www.filmweb.pl/film/{film}/discussion",
-            f"https://www.filmweb.pl/user/{user}#/votes/film",
-        ]
+        self.load_start_urls(Path(file).expanduser())
 
+    def load_start_urls(self, filename: str) -> None:
+        """Expects lines to be URLs"""
+        with open(filename) as file:
+            for line in file:
+                url = line.strip()
+                if url.startswith("/film/"):
+                    url = url[6:]  # Extract film handle
+                if not url.startswith("http"):
+                    url = self.discussion_tmpl.format(url)
+                self.log(f"Appending start URL {url}")
+                self.start_urls.append(url)
 
     def start_requests(self) -> Iterable[Request]:
+        """Assumes beginning from discussion pages"""
+        self.log(f"Total number of start URLs: {len(self.start_urls)}")
         for url in self.start_urls:
-            yield Request(url, dont_filter=True, callback=self.parse_user)
+            yield Request(url, dont_filter=True, callback=self.parse_discussion)
 
-    def parse(self, response: Response):
+    def parse_discussion(self, response: Response):
         """parse discussion page"""
-        self.log("Default parse method for url={}".format(response.url))
-        yield Request("https://www.filmweb.pl/", callback=self.parse_other)
+        self.log("Parse as DISCUSSION url={}".format(response.url))
         return
 
         topics = response.css('div.forumTopic')
@@ -43,18 +55,12 @@ class FilmwebSpiderSpider(scrapy.Spider):
         next_page = response.css('.pagination__item--next a::attr(href)').extract_first()
         if next_page:
             # response.follow allows using relative links
-            yield response.follow(next_page, callback=self.parse)
+            yield response.follow(next_page, callback=self.parse_discussion)
 
     def parse_other(self, response: Response):
-        self.log("OTHER parse method for url={}".format(response.url))
+        self.log("Parse as OTHER url={}".format(response.url))
         return
 
-    def parse_user(self, response: Response):
-        first_batch = [url for url in response.css('a::attr(href)').extract() if url.startswith('/film/')]
-        for url in sorted(first_batch):
-            if url.endswith("/vod"):
-                url = url[:-4]
-            self.log(url)
 
 
 
