@@ -21,12 +21,19 @@ class FilmwebSpiderSpider(scrapy.Spider):
         self.start_urls = [
             # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Wisley+naprawde+kochal+Jane.,1131471', self.parse_topic)
             # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Prawdziwsza+historia+mi%C5%82o%C5%9Bci+Jane+i+Toma,3114224', self.parse_topic)
-            ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/McAvoy,1605383', self.parse_topic)
+            # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/McAvoy,1605383', self.parse_topic)
+            # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion', self.parse_discussion),
         ]
-        return
+        # return
         if not file:
             raise ValueError(f"Expected file argument for spider {self.name}")
         self.load_start_urls(Path(file).expanduser())
+
+    def start_requests(self) -> Iterable[Request]:
+        """Assumes beginning from discussion pages"""
+        self.log(f"Total number of start URLs: {len(self.start_urls)}")
+        for url, callback in self.start_urls:
+            yield Request(url, dont_filter=True, callback=callback)
 
     def load_start_urls(self, filename: str) -> None:
         """Expects lines to be discussion URLs"""
@@ -40,23 +47,19 @@ class FilmwebSpiderSpider(scrapy.Spider):
                 self.log(f"Appending start URL {url}")
                 self.start_urls.append((url, self.parse_discussion))
 
-    def start_requests(self) -> Iterable[Request]:
-        """Assumes beginning from discussion pages"""
-        self.log(f"Total number of start URLs: {len(self.start_urls)}")
-        for url, callback in self.start_urls:
-            yield Request(url, dont_filter=True, callback=callback)
-
     def parse_discussion(self, response: Response):
         """parse discussion i.e. page listing topics"""
         self.log("Parse as DISCUSSION url={}".format(response.url))
-        return
 
         topics = response.css('div.forumTopic')
         for topic_container in topics:
             topic = TopicLoader(item=Topic(), selector=topic_container)
             topic.add_css('title', 'a.forumTopic__title::text')
             topic.add_css('url','a.forumTopic__title::attr(href)')
-            yield topic.load_item()
+            item = topic.load_item()
+            # yield item
+            if item.get('url'):
+                yield response.follow(item['url'], callback=self.parse_topic)
 
         next_page = response.css('.pagination__item--next a::attr(href)').extract_first()
         if next_page:

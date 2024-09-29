@@ -21,9 +21,9 @@ class Duplicate(DropItem):
 
 class FilterTopicsPipeline:
     def process_item(self, item, spider):
+        adapter = ItemAdapter(item)
         match item:
             case Topic():
-                adapter = ItemAdapter(item)
                 if adapter.get("url") is None:
                     raise MissingTopicUrl(f"Missing URL in topic {item}")
             case Comment():
