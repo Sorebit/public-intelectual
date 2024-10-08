@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1>
+  public-intelectual &middot;
+  Found {{ count }} comments posted by <span class="badge badge-success">{{ username }}</span>
+</h1>
+
+<section>
+  {% for c in comments %}
+  <details class="comment">
+    <summary class="comment__header">
+        <a href="{{ c.topic_url }}" target="_blank">Topic↗</a> &middot;
+        <a href="{{ c.owner }}" target="_blank"><span class="badge badge-success">{{ c.owner }}</span></a> &middot;
+        Post <a href="{{ c.post_id }}" target="_blank">{{ c.post_id }}↗</a>
+        {% if c.reply_to %}
+        &middot; <a href="{{ c.reply_to }}" target="_blank">In reply to↗</a>
+        {% endif %}
+    </summary>
+    <div class="comment__body">
+      <p class="comment__text">{{ c.text_content }}</p>
+
+      <details class="comment">
+        <summary class="comment__header">
+            <a href="{{ c.topic_url }}" target="_blank">Topic↗</a> &middot;
+            <a href="{{ c.owner }}" target="_blank"><span class="badge badge-success">{{ c.owner }}</span></a> &middot;
+            Post <a href="{{ c.post_id }}" target="_blank">{{ c.post_id }}↗</a>
+            {% if c.reply_to %}
+            &middot; <a href="{{ c.reply_to }}" target="_blank">In reply to↗</a>
+            {% endif %}
+        </summary>
+        <div class="comment__body">
+          <p class="comment__text">{{ c.text_content }}</p>
+        </div>
+      </details>
+    </div>
+  </details>
+  </div>
+
+  {% endfor %}
+
+</section>
+
+
+
+{% endblock %}
+

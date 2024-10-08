@@ -1,3 +1,12 @@
+{% extends "base.html" %}
+
+{% block body %}
+<form method="get">
+  <input name="username">
+  <button role="submit">Search</button>
+</form>
+
+<pre>
 function extractLinks(cls) {
   const elems = document.querySelectorAll(`a.${cls}`)
   const result = new Array()
@@ -25,3 +34,5 @@ function download(cls, filename) {
   const links = extractLinks(cls)
   downloadText(filename, links.join('\n') + '\n')
 }
+</pre>
+{% endblock %}
