@@ -18,14 +18,13 @@ class Comment(scrapy.Item):
     for topic in topics:
         topic.attrib -> {'id': 'post_5154360', 'class': 'forumTopic', 'data-id': '5154360', 'data-owner': 'Mril24', 'data-indent': '1'}
     """
-    topic_url = scrapy.Field()  # need to somehow bind comments to topic and construct a discussion
-    owner = scrapy.Field()
-    text = scrapy.Field()
-    order = scrapy.Field()
-    indent = scrapy.Field()  # na razie zapisujemy indent i kolejność, to może wsm wystarczyć do oglądania i analizowania
     post_id = scrapy.Field()
+    topic_url = scrapy.Field()  # need to somehow bind comments to topic and construct a discussion
+    text_content = scrapy.Field()
+    owner = scrapy.Field()
+    position = scrapy.Field()
+    indent = scrapy.Field()  # na razie zapisujemy indent i kolejność, to może wsm wystarczyć do oglądania i analizowania
     reply_to = scrapy.Field()
-
 
 # pierwszy post jest na chyba każdej stronie paginacji
 

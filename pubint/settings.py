@@ -64,6 +64,7 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
    "pubint.pipelines.FilterTopicsPipeline": 300,
+   "pubint.pipelines.SqlitePipeline": 400,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -91,3 +92,5 @@ ITEM_PIPELINES = {
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+SQLITE_URI = "file:./data/filmweb.db"

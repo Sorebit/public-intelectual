@@ -23,11 +23,13 @@ class FilmwebSpiderSpider(scrapy.Spider):
             # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Prawdziwsza+historia+mi%C5%82o%C5%9Bci+Jane+i+Toma,3114224', self.parse_topic)
             # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/McAvoy,1605383', self.parse_topic)
             # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion', self.parse_discussion),
+            # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion/Nie+wiem%252C+dlaczego+nikt+tego+jeszcze+nie+zauwa%C5%BCy%C5%82...,3435035', self.parse_topic)
         ]
         # return
         if not file:
             raise ValueError(f"Expected file argument for spider {self.name}")
         self.load_start_urls(Path(file).expanduser())
+        self.skip_cached = False  # TODO: cli arg
 
     def start_requests(self) -> Iterable[Request]:
         """Assumes beginning from discussion pages"""
@@ -72,11 +74,13 @@ class FilmwebSpiderSpider(scrapy.Spider):
         item = Comment()  # TODO: loader
         for i, comment_container in enumerate(comments):
             item['topic_url'] = response.url
-            item['owner'] = comment_container.attrib.get('data-owner')
-            item['text'] = comment_container.css('p.forumTopic__text::text').extract()
-            item['indent'] = comment_container.attrib.get('data-indent')
             item['post_id'] = comment_container.attrib.get('data-id')
-            item['order'] = i
+            item['owner'] = comment_container.attrib.get('data-owner')
+            item['text_content'] = " <br> ".join(
+                comment_container.css('p.forumTopic__text::text').extract()
+            )  # TODO: loader?
+            item['position'] = i
+            item['indent'] = comment_container.attrib.get('data-indent') or 0
             item['reply_to'] = comment_container.css('.forumTopic__authorReply a::attr(href)').extract_first()
 
             yield item
