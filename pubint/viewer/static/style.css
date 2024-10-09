@@ -38,12 +38,14 @@ pre {
   overflow: hidden;
 }
 
+.users {
+  column-count: 5;
+}
+
 .comment {
   border: var(--border);
   margin: .66em .66em;
 }
-
-
 
 .comment__header {
   font-weight: bold;

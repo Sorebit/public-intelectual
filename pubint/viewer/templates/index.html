@@ -1,38 +1,17 @@
 {% extends "base.html" %}
 
 {% block body %}
-<form method="get">
-  <input name="username">
-  <button role="submit">Search</button>
-</form>
+<h1>
+  <a href="/">public-intelectual</a> &middot;
+  Scrapped {{ users|length }} users
+</h1>
 
-<pre>
-function extractLinks(cls) {
-  const elems = document.querySelectorAll(`a.${cls}`)
-  const result = new Array()
-  for (let i = 0; i < elems.length; i++) {
-    const href = elems[i].attributes['href'].value
-    if (href.startsWith('/film/')) {
-      result.push(href)
-    }
-  }
-  console.log(result.length)
-  return result
-}
+<section>
+  <ul class="users">
+    {% for u in users %}
+    <li><strong>{{ u.post_count }}</strong> <a href="/{{ u.name }}">{{ u.name }}</a></li>
+    {% endfor %}
+  </ul>
+</section>
 
-function downloadText(filename, text) {
-  const element = document.createElement('a')
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
-  element.setAttribute('download', filename)
-  document.body.appendChild(element)
-  element.click()
-  document.body.removeChild(element)
-}
-
-function download(cls, filename) {
-  filename = filename || 'links.txt'
-  const links = extractLinks(cls)
-  downloadText(filename, links.join('\n') + '\n')
-}
-</pre>
 {% endblock %}
