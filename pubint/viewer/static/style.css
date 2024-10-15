@@ -3,17 +3,21 @@
   line-height: 1.25;
   font-family: Helvetica Neue, Arial, sans-serif;
   --tx--padding: .33em .66em;
-  --lt-color-gray-100: #f8f9fc;
-  --lt-color-gray-400: #c2c9d6;
+  --color-gray-100: #f8f9fc;
+  --color-gray-300: #dee3ed;
+  --color-gray-400: #c2c9d6;
+  --color-gray-600: #5e636e;
+  --color-white: #fff;
+  --color-black: #000;
+  --color-green: rgba(25,135,84,1);
 
-  --border: 1px var(--lt-color-gray-400) solid;
+  --border: 1px var(--color-gray-400) solid;
 
   --bs-badge-border-radius: 50rem;
   --bs-badge-padding-x: .65em;
   --bs-badge-padding-y: .35em;
   --bs-badge-font-size: .75em;
   --bs-badge-font-weight: 700;
-  --bs-badge-color: #fff;
 }
 
 * {
@@ -30,8 +34,12 @@ h1 {
   padding: var(--tx--padding);
 }
 
+h1 a {
+  color: var(--color-black);
+}
+
 pre {
-  background-color: var(--lt-color-gray-100);
+  background-color: var(--color-gray-100);
   padding: var(--tx--padding);
   border: var(--border);
   overflow: hidden;
@@ -56,7 +64,7 @@ pre {
 
 .comment__header {
   font-weight: bold;
-  background-color: #f8f9fc;
+  background-color: var(--color-gray-100);
   padding: var(--tx--padding);
 }
 
@@ -68,71 +76,23 @@ pre {
   padding: var(--tx--padding);
 }
 
-
-
-
 .badge {
   padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);
   border-radius: var(--bs-badge-border-radius);
   font-size: var(--bs-badge-font-size);
   font-weight: var(--bs-badge-font-weight);
-  color: var(--bs-badge-color);
   white-space: nowrap;
   vertical-align: baseline;
   line-height: 1;
   display: inline-block;
 }
 
-.badge-success {
-  background-color: rgba(25,135,84,1);
+.badge-hl {
+  color: var(--color-white);
+  background-color: var(--color-green);
 }
 
-.badge-obs {
-  color: white;
-  background-color: #653208; /*$orange-800;*/
-}
-
-.badge-ps {
-  color: black;
-  background-color: #6ea8fe; /*$blue-300;*/
-}
-
-.badge-exp {
-  color: black;
-  background-color: #ffe69c; /*$yellow-200;*/
-}
-
-.badge-inf {
-  color: white;
-  background-color: #fd7e14; /*$orange;*/
-}
-
-.badge-ds {
-  color: black;
-  background-color: #9eeaf9; /*$cyan-200;*/
-}
-
-.badge-hist {
-  color: white;
-  background-color: #495057; /*$gray-700;*/
-}
-
-.badge-std {
-  color: black;
-  background-color: #a6e9d5; /*$teal-200;*/
-}
-
-.badge-bcp {
-  color: white;
-  background-color: #d63384; /*$pink-500;*/
-}
-
-.badge-unkn {
-  color: black;
-  background-color: #dee2e6; /*$gray-300;*/
-}
-
-.badge-draft {
-  color: white;
-  background-color: #dc3545; /*$danger;*/
+.badge-other {
+  color: var(--color-black);
+  background-color: var(--color-gray-300);
 }

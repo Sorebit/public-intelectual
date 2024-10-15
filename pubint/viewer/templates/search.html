@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 
-{% macro comment(c) %}
+{% macro comment(c, highlight_name) %}
+{% if c.owner == highlight_name %}
+  {% set badge_class = "badge-hl" %}
+{% else %}
+  {% set badge_class = "badge-other" %}
+{% endif %}
 <details class="comment">
   <summary class="comment__header">
       <a href="{{ c.topic_url }}" target="_blank">{{ c.topic_title }}↗</a> &middot;
-      <a href="{{ c.owner }}" target="_blank"><span class="badge badge-success">{{ c.owner }}</span></a> &middot;
+      <a href="{{ c.owner }}" target="_blank">
+        <span class="badge {{ badge_class }}">{{ c.owner }}</span></a> &middot;
       Post <a href="{{ c.post_id }}" target="_blank">{{ c.post_id }}↗</a>
       {% if c.reply_to %}
       &middot; <a href="{{ c.reply_to }}" target="_blank">In reply to↗</a>
@@ -14,7 +20,7 @@
     <p class="comment__text">{{ c.text_content }}</p>
     <!-- replies -->
     {% for rc in c.replies %}
-      {{ comment(rc) }}
+      {{ comment(rc, highlight_name) }}
     {% endfor %}
   </div>
 </details>
@@ -23,12 +29,12 @@
 {% block body %}
 <h1>
   <a href="/">public-intelectual</a> &middot;
-  Scrapped {{ count }} comments posted by <span class="badge badge-success">{{ username }}</span>
+  Scrapped {{ count }} comments posted by <span class="badge badge-hl">{{ username }}</span>
 </h1>
 
 <section>
   {% for c in comments %}
-    {{ comment(c) }}
+    {{ comment(c, username) }}
   {% endfor %}
 </section>
 
