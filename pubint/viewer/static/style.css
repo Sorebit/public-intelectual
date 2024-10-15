@@ -1,20 +1,19 @@
 :root {
-  --border: 2px dashed rgba(0, 128, 128, 1.0);
   font-size: 17px;
   line-height: 1.25;
   font-family: Helvetica Neue, Arial, sans-serif;
+  --tx--padding: .33em .66em;
+  --lt-color-gray-100: #f8f9fc;
+  --lt-color-gray-400: #c2c9d6;
+
+  --border: 1px var(--lt-color-gray-400) solid;
+
   --bs-badge-border-radius: 50rem;
   --bs-badge-padding-x: .65em;
   --bs-badge-padding-y: .35em;
   --bs-badge-font-size: .75em;
   --bs-badge-font-weight: 700;
   --bs-badge-color: #fff;
-  --tx--padding: .33em .66em;
-
-  --lt-color-gray-100: #f8f9fc;
-  --lt-color-gray-400: #c2c9d6;
-
-  --border: 1px var(--lt-color-gray-400) solid;
 }
 
 * {
@@ -36,6 +35,14 @@ pre {
   padding: var(--tx--padding);
   border: var(--border);
   overflow: hidden;
+}
+
+.nobull {
+  list-style: none;
+}
+
+.pad {
+  padding: var(--tx--padding);
 }
 
 .users {

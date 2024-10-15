@@ -1,11 +1,17 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, List, Callable
+from urllib.parse import urlparse
 
 import scrapy
 from scrapy.http import Request, Response
 
 from pubint.items import Topic, Comment
 from pubint.item_loaders import TopicLoader
+
+
+def drop_query(url) -> str:
+    """Discussion URLs have page numbers located in query string"""
+    return urlparse(url)._replace(query="").geturl()
 
 
 class FilmwebSpiderSpider(scrapy.Spider):
@@ -24,8 +30,9 @@ class FilmwebSpiderSpider(scrapy.Spider):
             # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/McAvoy,1605383', self.parse_topic)
             # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion', self.parse_discussion),
             # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion/Nie+wiem%252C+dlaczego+nikt+tego+jeszcze+nie+zauwa%C5%BCy%C5%82...,3435035', self.parse_topic)
+            ('https://www.filmweb.pl/film/Substancja-2024-10051631/discussion/Nie+widzia%C5%82em+filmu%2C+ale+plakat...,3434212', self.parse_topic),
         ]
-        # return
+        return
         if not file:
             raise ValueError(f"Expected file argument for spider {self.name}")
         self.load_start_urls(Path(file).expanduser())
@@ -68,18 +75,22 @@ class FilmwebSpiderSpider(scrapy.Spider):
             # response.follow allows using relative links
             yield response.follow(next_page, callback=self.parse_discussion)
 
-    def parse_topic(self, response: Response):
-        self.log("Parse as TOPIC url={}".format(response.url))
+    def parse_topic(self, response: Response, **kwargs):
+        topic_url = drop_query(response.url)
+        self.log("Parse as TOPIC url={}".format(topic_url))
         comments = response.css('div.forumTopic')
+        topic_title = comments.css('a.forumTopic__title::text').extract_first()
         item = Comment()  # TODO: loader
+        offset = kwargs.get("offset", 0)
         for i, comment_container in enumerate(comments):
-            item['topic_url'] = response.url
+            item['topic_url'] = topic_url
+            item['topic_title'] = topic_title  # reduntant by A LOT
             item['post_id'] = comment_container.attrib.get('data-id')
             item['owner'] = comment_container.attrib.get('data-owner')
             item['text_content'] = " <br> ".join(
                 comment_container.css('p.forumTopic__text::text').extract()
             )  # TODO: loader?
-            item['position'] = i
+            item['position'] = i + offset
             item['indent'] = comment_container.attrib.get('data-indent') or 0
             item['reply_to'] = comment_container.css('.forumTopic__authorReply a::attr(href)').extract_first()
 
@@ -88,4 +99,4 @@ class FilmwebSpiderSpider(scrapy.Spider):
         next_page = response.css('.pagination__item--next a::attr(href)').extract_first()
         if next_page:
             # response.follow allows using relative links
-            yield response.follow(next_page, callback=self.parse_topic)
+            yield response.follow(next_page, callback=self.parse_topic, cb_kwargs={"offset": i + offset})

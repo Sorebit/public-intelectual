@@ -9,6 +9,8 @@ import scrapy
 class Topic(scrapy.Item):
     title = scrapy.Field()
     url = scrapy.Field()
+    film_title = scrapy.Field()
+    film_url = scrapy.Field()
 
 
 class Comment(scrapy.Item):
@@ -20,6 +22,7 @@ class Comment(scrapy.Item):
     """
     post_id = scrapy.Field()
     topic_url = scrapy.Field()  # need to somehow bind comments to topic and construct a discussion
+    topic_title = scrapy.Field()
     text_content = scrapy.Field()
     owner = scrapy.Field()
     position = scrapy.Field()

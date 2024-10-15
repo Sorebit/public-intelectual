@@ -5,18 +5,18 @@
 
 
 # useful for handling different item types with a single interface
-import pdb
 import logging
-from typing import TYPE_CHECKING, Any
 import sqlite3
+from typing import TYPE_CHECKING, Any
+import pdb
 
 from itemadapter import ItemAdapter
 from scrapy import Spider
 from scrapy.crawler import Crawler
 from scrapy.exceptions import DropItem
 
-from pubint.items import Topic, Comment
 from pubint import db
+from pubint.items import Topic, Comment
 
 
 class MissingTopicUrl(DropItem):
@@ -53,12 +53,6 @@ class FilterTopicsPipeline:
         return item
 
 
-def dict_factory(cursor, row):
-    """TODO: I think this is the place to plug in pydantic"""
-    fields = [column[0] for column in cursor.description]
-    return {k: v for k, v in zip(fields, row)}
-
-
 class SqlitePipeline(LoggingMixin):
     def __init__(self, db_uri):
         self.db_uri = db_uri
@@ -74,7 +68,7 @@ class SqlitePipeline(LoggingMixin):
     def open_spider(self, spider: Spider):
         self.log(f"Connecting to {self.db_uri}")
         self.connection = sqlite3.connect(self.db_uri, uri=True)
-        self.connection.row_factory = dict_factory
+        self.connection.row_factory = db.dict_row_factory
         self.create_tables()
 
     def close_spider(self, spider: Spider):
@@ -100,14 +94,15 @@ class SqlitePipeline(LoggingMixin):
         # stmt = "INSERT OR REPLACE"  # TODO: switch as arg?
         stmt = "INSERT"
         stmt += """
-            INTO comment(post_id, topic_url, text_content,owner, position, indent, reply_to)
-            VALUES (:post_id, :topic_url, :text_content, :owner, :position, :indent, :reply_to)
+            INTO comment(post_id, topic_url, topic_title, text_content,owner, position, indent, reply_to)
+            VALUES (:post_id, :topic_url, :topic_title, :text_content, :owner, :position, :indent, :reply_to)
         """
         self.cursor.execute(
             stmt,
             {
                 "post_id": item.get("post_id"),
                 "topic_url": item.get("topic_url"),
+                "topic_title": item.get("topic_title"),
                 "text_content": item.get("text_content"),
                 "owner": item.get("owner"),
                 "position": item.get("position"),
@@ -122,7 +117,7 @@ class SqlitePipeline(LoggingMixin):
         names = [row["name"] for row in res.fetchall()]
         if "comment" not in names:
             self.log(db.schema)
-            self.cursor.execute(db.schema)
+            self.cursor.executescript(db.schema)
         self.connection.commit()
 
     @property

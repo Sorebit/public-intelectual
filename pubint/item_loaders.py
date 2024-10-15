@@ -1,5 +1,7 @@
 # https://docs.scrapy.org/en/latest/topics/loaders.html
 
+from urllib.parse import urlparse
+
 from scrapy.loader import ItemLoader
 from itemloaders.processors import MapCompose, TakeFirst
 

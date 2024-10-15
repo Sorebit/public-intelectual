@@ -7,7 +7,7 @@
 </h1>
 
 <section>
-  <ul class="users">
+  <ul class="users nobull">
     {% for u in users %}
     <li><strong>{{ u.post_count }}</strong> <a href="/{{ u.name }}">{{ u.name }}</a></li>
     {% endfor %}
