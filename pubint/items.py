@@ -27,6 +27,7 @@ class Comment(scrapy.Item):
     owner = scrapy.Field()
     position = scrapy.Field()
     indent = scrapy.Field()  # na razie zapisujemy indent i kolejność, to może wsm wystarczyć do oglądania i analizowania
+    reply_to_url = scrapy.Field()
     reply_to = scrapy.Field()
 
 # pierwszy post jest na chyba każdej stronie paginacji

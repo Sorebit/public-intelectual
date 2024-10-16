@@ -88,14 +88,15 @@ class SqlitePipeline(LoggingMixin):
             pdb.set_trace()
         except sqlite3.DatabaseError as exc:
             pdb.set_trace()
+            raise exc
         return item
 
     def save(self, item):
         # stmt = "INSERT OR REPLACE"  # TODO: switch as arg?
         stmt = "INSERT"
         stmt += """
-            INTO comment(post_id, topic_url, topic_title, text_content,owner, position, indent, reply_to)
-            VALUES (:post_id, :topic_url, :topic_title, :text_content, :owner, :position, :indent, :reply_to)
+            INTO comment(post_id, topic_url, topic_title, text_content,owner, position, indent, reply_to, reply_to_url)
+            VALUES (:post_id, :topic_url, :topic_title, :text_content, :owner, :position, :indent, :reply_to, :reply_to_url)
         """
         self.cursor.execute(
             stmt,
@@ -108,6 +109,7 @@ class SqlitePipeline(LoggingMixin):
                 "position": item.get("position"),
                 "indent": item.get("indent"),
                 "reply_to": item.get("reply_to"),
+                "reply_to_url": item.get("reply_to_url"),
             }
         )
 

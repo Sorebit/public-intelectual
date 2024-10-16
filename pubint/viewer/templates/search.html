@@ -3,18 +3,21 @@
 {% macro comment(c, highlight_name) %}
 {% if c.owner == highlight_name %}
   {% set badge_class = "badge-hl" %}
+{% elif c.owner == None %}
+  {% set badge_class = "" %}
 {% else %}
   {% set badge_class = "badge-other" %}
 {% endif %}
 <details class="comment">
   <summary class="comment__header">
       <a href="{{ c.topic_url }}" target="_blank">{{ c.topic_title }}↗</a> &middot;
-      <a href="{{ c.owner }}" target="_blank">
-        <span class="badge {{ badge_class }}">{{ c.owner }}</span></a> &middot;
+      <a href="{{ c.owner|default('#',true) }}" target="_blank">
+        <span class="badge {{ badge_class }}">{{ c.owner|default('użytkownik usunięty',true) }}</span></a> &middot;
       Post <a href="{{ c.post_id }}" target="_blank">{{ c.post_id }}↗</a>
       {% if c.reply_to %}
-      &middot; <a href="{{ c.reply_to }}" target="_blank">In reply to↗</a>
+      &middot; <a href="{{ c.reply_to_url }}" target="_blank">In reply to↗</a>
       {% endif %}
+      &middot; {{ c.position }}
   </summary>
   <div class="comment__body">
     <p class="comment__text">{{ c.text_content }}</p>
@@ -31,6 +34,10 @@
   <a href="/">public-intelectual</a> &middot;
   Scrapped {{ count }} comments posted by <span class="badge badge-hl">{{ username }}</span>
 </h1>
+
+<!-- <h2>{{ None|default("no co") }}</h2> -->
+<!-- <h2>{{ None|default("no co",true) }}</h2> -->
+<!-- <h2>{{ None|default("no co",false) }}</h2> -->
 
 <section>
   {% for c in comments %}

@@ -14,6 +14,18 @@ def drop_query(url) -> str:
     return urlparse(url)._replace(query="").geturl()
 
 
+def fragment(url) -> str:
+    return urlparse(url).fragment
+
+
+def add_netloc(url, netloc) -> str:
+    """Replaces netloc. Adds https scheme, if needed"""
+    u = urlparse(url)._replace(netloc=netloc)
+    if not u.scheme:
+        u = u._replace(scheme='https')
+    return u.geturl()
+
+
 class FilmwebSpiderSpider(scrapy.Spider):
     name = "filmweb"
     allowed_domains = ["filmweb.pl"]
@@ -30,7 +42,8 @@ class FilmwebSpiderSpider(scrapy.Spider):
             # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/McAvoy,1605383', self.parse_topic)
             # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion', self.parse_discussion),
             # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion/Nie+wiem%252C+dlaczego+nikt+tego+jeszcze+nie+zauwa%C5%BCy%C5%82...,3435035', self.parse_topic)
-            ('https://www.filmweb.pl/film/Substancja-2024-10051631/discussion/Nie+widzia%C5%82em+filmu%2C+ale+plakat...,3434212', self.parse_topic),
+            # ('https://www.filmweb.pl/film/Substancja-2024-10051631/discussion/Nie+widzia%C5%82em+filmu%2C+ale+plakat...,3434212', self.parse_topic),
+            ('https://www.filmweb.pl/serial/W%C5%82adca+Pier%C5%9Bcieni%3A+Pier%C5%9Bcienie+W%C5%82adzy-2022-835082/season/1/discussion/Szkoda,3282235', self.parse_topic)
         ]
         return
         if not file:
@@ -45,7 +58,10 @@ class FilmwebSpiderSpider(scrapy.Spider):
             yield Request(url, dont_filter=True, callback=callback)
 
     def load_start_urls(self, filename: str) -> None:
-        """Expects lines to be discussion URLs"""
+        """Expects lines to be discussion URLs
+
+        TODO: urlparse
+        """
         with open(filename) as file:
             for line in file:
                 url = line.strip()
@@ -76,7 +92,7 @@ class FilmwebSpiderSpider(scrapy.Spider):
             yield response.follow(next_page, callback=self.parse_discussion)
 
     def parse_topic(self, response: Response, **kwargs):
-        topic_url = drop_query(response.url)
+        topic_url = drop_query(response.url)  # maybe it would be better to store the query too but as a separate column
         self.log("Parse as TOPIC url={}".format(topic_url))
         comments = response.css('div.forumTopic')
         topic_title = comments.css('a.forumTopic__title::text').extract_first()
@@ -92,7 +108,15 @@ class FilmwebSpiderSpider(scrapy.Spider):
             )  # TODO: loader?
             item['position'] = i + offset
             item['indent'] = comment_container.attrib.get('data-indent') or 0
-            item['reply_to'] = comment_container.css('.forumTopic__authorReply a::attr(href)').extract_first()
+            reply_to = comment_container.css('.forumTopic__authorReply a::attr(href)').extract_first()
+            if reply_to:
+                # The url also contains the query (page num), so it's convenient to store it all rather than combining
+                # it from different columns (which is a violation of which Normal Form?)
+                item['reply_to_url'] = add_netloc(reply_to, 'www.filmweb.pl')
+                item['reply_to'] = fragment(reply_to).replace("topic_", "").replace("post_", "")
+            else:
+                item['reply_to_url'] = None
+                item['reply_to'] = None
 
             yield item
 
