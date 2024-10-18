@@ -5,9 +5,8 @@ import flask
 
 from pubint import db, settings
 
-Tree = dict
 
-app = flask.Flask(__name__)
+Tree = dict
 
 
 def get_users(conn: sqlite3.Connection):
@@ -29,51 +28,75 @@ def topics_with_user(conn: sqlite3.Connection, username: str) -> list[str]:
     """
     res = conn.execute(stmt, {"username": username})
     s2 = res.fetchall()
-    a2 = [row["topic_url"] for row in s2]
-    # breakpoint()
-    return a2
-
-
-def format_tuple(t: tuple):
-    raise NotImplementedError
+    return [row["topic_url"] for row in s2]
 
 
 def query(conn: sqlite3.Connection, topic_urls: list[str]):
     """
     TODO: Topic as separate table with title
-    TODO: nested reply tree
     """
-    if len(topic_urls) == 0:
-        return []
-    # if len(topic_urls) == 1:
-    #     pass
     stmt = """
         SELECT post_id, topic_url, topic_title, text_content, owner, position, indent, reply_to, reply_to_url
         FROM comment
         WHERE topic_url IN {}
         ORDER BY topic_url, position
-    """
-    if len(topic_urls) == 1:
-        stmt = stmt.format("('{}')".format(topic_urls[0]))
-    else:
-        stmt = stmt.format(tuple(topic_urls))
-    db.logger.error(stmt)
-    # breakpoint()
+    """.format(db.format_tuple(topic_urls))
+    db.logger.debug(stmt)
     res = conn.execute(stmt)
-    a2 = res.fetchall()
-    # breakpoint()
-    return a2
+    return res.fetchall()
 
 
-def filter_tree(tree: Tree, username: str) -> Tree:
-    return tree
+def traverse(node: Tree, fn):
+    fn(node)
+    for child in node["replies"]:
+        traverse(child, fn)
 
 
-def filter_trees(trees: list[Tree], username: str) -> list[Tree]:
-    return [filter_tree(tree, username) for tree in trees]
+def filter_tree(tree: Tree, nodes_by_id: dict[str, Tree], username: str) -> Tree:
+    owned_by_user = []  # This will contain all nodes with owner == username
+
+    def mark(node: Tree) -> None:
+        if node["owner"] == username:
+            owned_by_user.append(node)
+
+    traverse(tree, mark)
+    # Gather all paths leading from marked nodes back to root.
+    # Ordering starting nodes by index (desc) prevents traversing the same path multiple times.
+    by_indent_desc = sorted(owned_by_user, key=lambda node: -node["indent"])
+    visited = set()
+    def walk_to_root(node: Tree) -> None:
+        #breakpoint()
+        if node["post_id"] in visited:
+            return  # Reached already traversed path
+        visited.add(node["post_id"])
+        parent_id = node["reply_to"]
+        if parent_id is None:
+            return  # Reached root for the first time
+        walk_to_root(nodes_by_id[parent_id])
+
+    for start in by_indent_desc:
+        walk_to_root(start)
+
+    def add_node_to_new_tree(node: Tree):
+        original_node = nodes_by_id[node["post_id"]]
+        for child in original_node["replies"]:
+            if child["post_id"] in visited:
+                node["replies"].append({**child, "replies": []})
+
+        for child in node["replies"]:
+            add_node_to_new_tree(child)
+
+    new_root = {**tree, "replies": []}
+    add_node_to_new_tree(new_root)
+
+    return new_root
 
 
-def create_trees_from_rows(rows: list) -> list[Tree]:
+def filter_trees(trees: list[Tree], nodes_by_id: dict[str, Tree], username: str) -> list[Tree]:
+    return [filter_tree(tree, nodes_by_id, username) for tree in trees]
+
+
+def create_trees_from_rows(rows: list) -> tuple[list[Tree], dict[str, Tree]]:
     """Expects list ordered by position with indent never increasing by more than 1"""
     roots = []
     posts_by_id = dict()
@@ -86,7 +109,10 @@ def create_trees_from_rows(rows: list) -> list[Tree]:
         else:
             posts_by_id[node["reply_to"]]["replies"].append(node)
 
-    return roots
+    return roots, posts_by_id
+
+
+app = flask.Flask(__name__)
 
 
 @app.route("/")
@@ -102,16 +128,20 @@ def search(username: str):
     items = []
     with db.connection(settings.SQLITE_URI) as conn:
         topic_urls = topics_with_user(conn, username)
-        comments = query(conn, topic_urls)
-        items = create_trees_from_rows(comments)
+        comments_rows = query(conn, topic_urls)
+        comments, comments_by_id = create_trees_from_rows(comments_rows)
 
     # breakpoint()
     # for item in items:
     #     item['replies'] = [item.copy()]
 
+    # TODO: filter on/off toggle
+    topics = filter_trees(comments, comments_by_id, username)
+
     return flask.render_template(
         "search.html",
         username=username,
-        count=len(items),
-        comments=items,
+        count=len(topics),
+        comments=topics,
+        no_user_placeholder="użytkownik usunięty",
     )

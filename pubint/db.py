@@ -19,6 +19,18 @@ def dict_row_factory(cursor: sqlite3.Cursor, row):
     return {k: v for k, v in zip(fields, row)}
 
 
+def format_tuple(t: list[str] | tuple[str]):
+    """Prepare list/tuple for SQLite statements"""
+    # I think this is a case for an Adapter?
+    match len(t):
+        case 0:
+            return "()"
+        case 1:
+            return "({})".format(repr(t[0]))
+        case _:
+            return tuple(t)
+
+
 @contextmanager
 def connection(db_uri: str):
     logger.debug(f"Connecting to {db_uri}")
