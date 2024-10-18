@@ -139,7 +139,6 @@ def test_tree_cuts_off_at_deepest_occur(name, tree_1, tree_1_map):
     ])
 
 
-@pytest.mark.skip
 def test_tree_empty_when_not_found(nonexistent_name, tree_1, tree_1_map):
     expected = filter_tree(tree_1, tree_1_map, nonexistent_name)
     assert expected == None

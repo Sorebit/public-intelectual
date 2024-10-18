@@ -43,7 +43,8 @@ class FilmwebSpiderSpider(scrapy.Spider):
             # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion', self.parse_discussion),
             # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion/Nie+wiem%252C+dlaczego+nikt+tego+jeszcze+nie+zauwa%C5%BCy%C5%82...,3435035', self.parse_topic)
             # ('https://www.filmweb.pl/film/Substancja-2024-10051631/discussion/Nie+widzia%C5%82em+filmu%2C+ale+plakat...,3434212', self.parse_topic),
-            ('https://www.filmweb.pl/serial/W%C5%82adca+Pier%C5%9Bcieni%3A+Pier%C5%9Bcienie+W%C5%82adzy-2022-835082/season/1/discussion/Szkoda,3282235', self.parse_topic)
+            ('https://www.filmweb.pl/serial/W%C5%82adca+Pier%C5%9Bcieni%3A+Pier%C5%9Bcienie+W%C5%82adzy-2022-835082/season/1/discussion/Szkoda,3282235', self.parse_topic),
+            ('https://www.filmweb.pl/serial/W%C5%82adca+Pier%C5%9Bcieni%3A+Pier%C5%9Bcienie+W%C5%82adzy-2022-835082/season/1/discussion/Do+wszystkich+punktuj%C4%85cych+wysoko+ten+serial,3315622', self.parse_topic),
         ]
         return
         if not file:

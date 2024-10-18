@@ -15,6 +15,7 @@ def get_users(conn: sqlite3.Connection):
         FROM comment
         GROUP BY owner
     """
+    db.logger.debug(stmt)  # TODO: echo on connection
     res = conn.execute(stmt)
     return res.fetchall()
 
@@ -26,6 +27,7 @@ def topics_with_user(conn: sqlite3.Connection, username: str) -> list[str]:
         FROM comment
         WHERE owner = :username
     """
+    db.logger.debug(stmt)  # TODO: echo on connection
     res = conn.execute(stmt, {"username": username})
     s2 = res.fetchall()
     return [row["topic_url"] for row in s2]
@@ -41,7 +43,7 @@ def query(conn: sqlite3.Connection, topic_urls: list[str]):
         WHERE topic_url IN {}
         ORDER BY topic_url, position
     """.format(db.format_tuple(topic_urls))
-    db.logger.debug(stmt)
+    db.logger.debug(stmt)  # TODO: echo on connection
     res = conn.execute(stmt)
     return res.fetchall()
 
@@ -52,14 +54,14 @@ def traverse(node: Tree, fn):
         traverse(child, fn)
 
 
-def filter_tree(tree: Tree, nodes_by_id: dict[str, Tree], username: str) -> Tree:
+def filter_tree(root: Tree, nodes_by_id: dict[str, Tree], username: str) -> Tree:
     owned_by_user = []  # This will contain all nodes with owner == username
 
     def mark(node: Tree) -> None:
         if node["owner"] == username:
             owned_by_user.append(node)
 
-    traverse(tree, mark)
+    traverse(root, mark)
     # Gather all paths leading from marked nodes back to root.
     # Ordering starting nodes by index (desc) prevents traversing the same path multiple times.
     by_indent_desc = sorted(owned_by_user, key=lambda node: -node["indent"])
@@ -76,24 +78,28 @@ def filter_tree(tree: Tree, nodes_by_id: dict[str, Tree], username: str) -> Tree
 
     for start in by_indent_desc:
         walk_to_root(start)
+    if not visited:
+        return None
 
-    def add_node_to_new_tree(node: Tree):
+    def add_to_new_tree(node: Tree):
         original_node = nodes_by_id[node["post_id"]]
         for child in original_node["replies"]:
             if child["post_id"] in visited:
                 node["replies"].append({**child, "replies": []})
 
-        for child in node["replies"]:
-            add_node_to_new_tree(child)
-
-    new_root = {**tree, "replies": []}
-    add_node_to_new_tree(new_root)
+    new_root = {**root, "replies": []}
+    traverse(new_root, add_to_new_tree)
 
     return new_root
 
 
 def filter_trees(trees: list[Tree], nodes_by_id: dict[str, Tree], username: str) -> list[Tree]:
-    return [filter_tree(tree, nodes_by_id, username) for tree in trees]
+    result = []
+    for tree in trees:
+        filtered = filter_tree(tree, nodes_by_id, username)
+        if filtered:
+            result.append(filtered)
+    return result
 
 
 def create_trees_from_rows(rows: list) -> tuple[list[Tree], dict[str, Tree]]:
@@ -129,14 +135,11 @@ def search(username: str):
     with db.connection(settings.SQLITE_URI) as conn:
         topic_urls = topics_with_user(conn, username)
         comments_rows = query(conn, topic_urls)
-        comments, comments_by_id = create_trees_from_rows(comments_rows)
-
-    # breakpoint()
-    # for item in items:
-    #     item['replies'] = [item.copy()]
+        topics, posts_by_id = create_trees_from_rows(comments_rows)
 
     # TODO: filter on/off toggle
-    topics = filter_trees(comments, comments_by_id, username)
+    # TODO: open all by default toggle
+    topics = filter_trees(topics, posts_by_id, username)
 
     return flask.render_template(
         "search.html",
