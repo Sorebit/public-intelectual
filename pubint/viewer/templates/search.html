@@ -20,7 +20,7 @@
       &middot; {{ c.position }} ⇥ {{ c.indent }}
   </summary>
   <div class="comment__body">
-    <p class="comment__text">{{ c.text_content }}</p>
+    <p class="comment__text">{{ c.text_content|safe }}</p>
     <!-- replies -->
     {% for rc in c.replies %}
       {{ comment(rc, highlight_name) }}

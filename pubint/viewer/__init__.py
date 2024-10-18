@@ -9,7 +9,7 @@ from pubint import db, settings
 Tree = dict
 
 
-def get_users(conn: sqlite3.Connection):
+def get_users(conn: sqlite3.Connection) -> list:
     stmt = """
         SELECT owner as name, COUNT(post_id) as post_count
         FROM comment
@@ -33,7 +33,7 @@ def topics_with_user(conn: sqlite3.Connection, username: str) -> list[str]:
     return [row["topic_url"] for row in s2]
 
 
-def query(conn: sqlite3.Connection, topic_urls: list[str]):
+def query(conn: sqlite3.Connection, topic_urls: list[str]) -> list:
     """
     TODO: Topic as separate table with title
     """
@@ -48,7 +48,7 @@ def query(conn: sqlite3.Connection, topic_urls: list[str]):
     return res.fetchall()
 
 
-def traverse(node: Tree, fn):
+def traverse(node: Tree, fn) -> None:
     fn(node)
     for child in node["replies"]:
         traverse(child, fn)
@@ -135,16 +135,19 @@ def search(username: str):
     with db.connection(settings.SQLITE_URI) as conn:
         topic_urls = topics_with_user(conn, username)
         comments_rows = query(conn, topic_urls)
-        topics, posts_by_id = create_trees_from_rows(comments_rows)
+
+    topics, posts_by_id = create_trees_from_rows(comments_rows)
 
     # TODO: filter on/off toggle
     # TODO: open all by default toggle
+    # TODO: fix <br>'s in comment bodies: https://stackoverflow.com/questions/18662898/jinja-render-text-in-html-preserving-line-breaks
+    #       Wygląda na to, że filtr safe w jinjy sobie z tym radzi
     topics = filter_trees(topics, posts_by_id, username)
 
     return flask.render_template(
         "search.html",
         username=username,
-        count=len(topics),
+        count=len(topics),  # TODO: zły count, lepiej byłoby count commenty usera i count topiców
         comments=topics,
         no_user_placeholder="użytkownik usunięty",
     )
