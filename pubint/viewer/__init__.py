@@ -15,10 +15,18 @@ def get_users(conn: sqlite3.Connection) -> list:
         FROM comment
         GROUP BY owner
     """
-    db.logger.debug(stmt)  # TODO: echo on connection
     res = conn.execute(stmt)
     return res.fetchall()
 
+
+def get_stats(conn: sqlite3.Connection) -> dict:
+    stmt = """
+        SELECT
+            COUNT(DISTINCT topic_url) as total_topics, COUNT(DISTINCT post_id) as total_posts, COUNT(DISTINCT owner) as total_users
+        FROM comment
+    """
+    res = conn.execute(stmt)
+    return res.fetchone()
 
 def topics_with_user(conn: sqlite3.Connection, username: str) -> list[str]:
     """List of topic IDs in which given user has made at least 1 comment"""
@@ -27,14 +35,12 @@ def topics_with_user(conn: sqlite3.Connection, username: str) -> list[str]:
         FROM comment
         WHERE owner = :username
     """
-    db.logger.debug(stmt)  # TODO: echo on connection
     res = conn.execute(stmt, {"username": username})
-    s2 = res.fetchall()
-    return [row["topic_url"] for row in s2]
+    return [row["topic_url"] for row in res.fetchall()]
 
 
-def query(conn: sqlite3.Connection, topic_urls: list[str]) -> list:
-    """
+def get_comments(conn: sqlite3.Connection, topic_urls: list[str]) -> list:
+    """List of comments comprising given topics
     TODO: Topic as separate table with title
     """
     stmt = """
@@ -43,9 +49,24 @@ def query(conn: sqlite3.Connection, topic_urls: list[str]) -> list:
         WHERE topic_url IN {}
         ORDER BY topic_url, position
     """.format(db.format_tuple(topic_urls))
-    db.logger.debug(stmt)  # TODO: echo on connection
     res = conn.execute(stmt)
     return res.fetchall()
+
+
+def create_trees_from_rows(rows: list) -> tuple[list[Tree], dict[str, Tree]]:
+    """Expects list ordered by position with indent never increasing by more than 1"""
+    roots = []
+    posts_by_id = dict()
+    for row in rows:
+        node = {**row, "replies": []}
+        posts_by_id[row["post_id"]] = node
+
+        if node["reply_to"] is None:
+            roots.append(node)
+        else:
+            posts_by_id[node["reply_to"]]["replies"].append(node)
+
+    return roots, posts_by_id
 
 
 def traverse(node: Tree, fn) -> None:
@@ -102,52 +123,37 @@ def filter_trees(trees: list[Tree], nodes_by_id: dict[str, Tree], username: str)
     return result
 
 
-def create_trees_from_rows(rows: list) -> tuple[list[Tree], dict[str, Tree]]:
-    """Expects list ordered by position with indent never increasing by more than 1"""
-    roots = []
-    posts_by_id = dict()
-    for row in rows:
-        node = {**row, "replies": []}
-        posts_by_id[row["post_id"]] = node
-
-        if node["reply_to"] is None:
-            roots.append(node)
-        else:
-            posts_by_id[node["reply_to"]]["replies"].append(node)
-
-    return roots, posts_by_id
-
-
 app = flask.Flask(__name__)
 
 
 @app.route("/")
 def index():
     users = []
-    with db.connection(settings.SQLITE_URI) as conn:
+    with db.connection(settings.SQLITE_URI, echo=True) as conn:
         users = get_users(conn)
-    return flask.render_template("index.html", users=users)
+        stats = get_stats(conn)
+
+    return flask.render_template("index.html", users=users, stats=stats)
 
 
 @app.route("/<username>")
 def search(username: str):
     items = []
-    with db.connection(settings.SQLITE_URI) as conn:
+    with db.connection(settings.SQLITE_URI, echo=True) as conn:
         topic_urls = topics_with_user(conn, username)
-        comments_rows = query(conn, topic_urls)
+        comments_rows = get_comments(conn, topic_urls)
 
     topics, posts_by_id = create_trees_from_rows(comments_rows)
 
     # TODO: filter on/off toggle
     # TODO: open all by default toggle
-    # TODO: fix <br>'s in comment bodies: https://stackoverflow.com/questions/18662898/jinja-render-text-in-html-preserving-line-breaks
-    #       Wygląda na to, że filtr safe w jinjy sobie z tym radzi
     topics = filter_trees(topics, posts_by_id, username)
 
     return flask.render_template(
         "search.html",
         username=username,
-        count=len(topics),  # TODO: zły count, lepiej byłoby count commenty usera i count topiców
+        count_topics=len(topics),
+        count_comments='?',  # TODO: zły count, lepiej byłoby count commenty usera i count topiców
         comments=topics,
         no_user_placeholder="użytkownik usunięty",
     )

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% macro comment(c, highlight_name) %}
+{% macro comment(c, highlight_name, open) %}
 {% if c.owner == highlight_name %}
   {% set badge_class = "badge-hl" %}
 {% elif c.owner == None %}
@@ -8,7 +8,10 @@
 {% else %}
   {% set badge_class = "badge-other" %}
 {% endif %}
-<details class="comment">
+<details
+  class="comment"
+  {% if open %}open{% endif %}
+  >
   <summary class="comment__header">
       <a href="{{ c.topic_url }}" target="_blank">{{ c.topic_title }}↗</a> &middot;
       <a href="{{ c.owner|default('#',true) }}" target="_blank">
@@ -23,7 +26,7 @@
     <p class="comment__text">{{ c.text_content|safe }}</p>
     <!-- replies -->
     {% for rc in c.replies %}
-      {{ comment(rc, highlight_name) }}
+      {{ comment(rc, highlight_name, True) }}
     {% endfor %}
   </div>
 </details>
@@ -32,12 +35,12 @@
 {% block body %}
 <h1>
   <a href="/">public-intelectual</a> &middot;
-  Scrapped {{ count }} comments posted by <span class="badge badge-hl">{{ username }}</span>
+  Scrapped {{ count_comments }} comments in {{ count_topics }} topics posted by <span class="badge badge-hl">{{ username }}</span>
 </h1>
 
 <section>
   {% for c in comments %}
-    {{ comment(c, username) }}
+    {{ comment(c, username, False) }}
   {% endfor %}
 </section>
 

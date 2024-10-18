@@ -32,10 +32,12 @@ def format_tuple(t: list[str] | tuple[str]):
 
 
 @contextmanager
-def connection(db_uri: str):
+def connection(db_uri: str, echo: bool = False):
     logger.debug(f"Connecting to {db_uri}")
     connection = sqlite3.connect(db_uri, uri=True)
     connection.row_factory = dict_row_factory
+    if echo:
+        connection.set_trace_callback(lambda stmt: logger.debug(stmt))
     yield connection
     logger.debug(f"Closing connection to {db_uri}")
     connection.rollback()

@@ -102,6 +102,11 @@ def tree_deleted_user():
         mk_node(206, None, 1, []),
     ])
 
+@pytest.fixture
+def tree_banned_comment():
+    return mk_node(
+
+    )
 
 @pytest.fixture
 def tree_monologue(name):
