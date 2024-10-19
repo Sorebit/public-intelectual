@@ -22,13 +22,15 @@ def get_users(conn: sqlite3.Connection, page: int = 0, page_size: int = 150) -> 
     return res.fetchall()
 
 
-def get_stats(conn: sqlite3.Connection) -> dict:
+def get_stats(conn: sqlite3.Connection, user: str | None = None) -> dict:
     stmt = """
         SELECT
             COUNT(DISTINCT topic_url) as total_topics, COUNT(DISTINCT post_id) as total_posts, COUNT(DISTINCT owner) as total_users
         FROM comment
     """
-    res = conn.execute(stmt)
+    if user:
+        stmt += "WHERE owner = :user"
+    res = conn.execute(stmt, {"user": user})
     return res.fetchone()
 
 
@@ -151,6 +153,7 @@ def search(username: str):
     with db.connection(settings.SQLITE_URI, echo=True) as conn:
         topic_urls = topics_with_user(conn, username)
         comments_rows = get_comments(conn, topic_urls)
+        stats = get_stats(conn, username)
 
     topics, posts_by_id = create_trees_from_rows(comments_rows)
 
@@ -160,8 +163,7 @@ def search(username: str):
     return flask.render_template(
         "search.html",
         username=username,
-        count_topics=len(topics),
-        count_comments='?',  # TODO: zły count, lepiej byłoby count commenty usera i count topiców
         comments=topics,
+        stats=stats,
         no_user_placeholder="użytkownik usunięty",
     )

@@ -37,14 +37,7 @@ class FilmwebSpiderSpider(scrapy.Spider):
     def __init__(self, file: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.start_urls = [
-            # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Wisley+naprawde+kochal+Jane.,1131471', self.parse_topic)
-            # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/Prawdziwsza+historia+mi%C5%82o%C5%9Bci+Jane+i+Toma,3114224', self.parse_topic)
-            # ('https://www.filmweb.pl/film/Zakochana+Jane-2007-180058/discussion/McAvoy,1605383', self.parse_topic)
-            # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion', self.parse_discussion),
-            # ('https://www.filmweb.pl/film/Strange+Darling-2023-10026886/discussion/Nie+wiem%252C+dlaczego+nikt+tego+jeszcze+nie+zauwa%C5%BCy%C5%82...,3435035', self.parse_topic)
-            # ('https://www.filmweb.pl/film/Substancja-2024-10051631/discussion/Nie+widzia%C5%82em+filmu%2C+ale+plakat...,3434212', self.parse_topic),
-            #('https://www.filmweb.pl/serial/W%C5%82adca+Pier%C5%9Bcieni%3A+Pier%C5%9Bcienie+W%C5%82adzy-2022-835082/season/1/discussion/Szkoda,3282235', self.parse_topic),
-            #('https://www.filmweb.pl/serial/W%C5%82adca+Pier%C5%9Bcieni%3A+Pier%C5%9Bcienie+W%C5%82adzy-2022-835082/season/1/discussion/Do+wszystkich+punktuj%C4%85cych+wysoko+ten+serial,3315622', self.parse_topic),
+            ("https://www.filmweb.pl/film/Mad+Max+2+Wojownik+szos-1981-1496/discussion/,714254", self.parse_topic),
         ]
 
         if not file:
