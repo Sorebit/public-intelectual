@@ -9,13 +9,16 @@ from pubint import db, settings
 Tree = dict
 
 
-def get_users(conn: sqlite3.Connection) -> list:
+def get_users(conn: sqlite3.Connection, page: int = 0, page_size: int = 150) -> list:
     stmt = """
         SELECT owner as name, COUNT(post_id) as post_count
         FROM comment
         GROUP BY owner
+        ORDER BY owner
+        LIMIT :page_size
+        OFFSET :offset
     """
-    res = conn.execute(stmt)
+    res = conn.execute(stmt, {"offset": page * page_size, "page_size": page_size})
     return res.fetchall()
 
 
@@ -27,6 +30,7 @@ def get_stats(conn: sqlite3.Connection) -> dict:
     """
     res = conn.execute(stmt)
     return res.fetchone()
+
 
 def topics_with_user(conn: sqlite3.Connection, username: str) -> list[str]:
     """List of topic IDs in which given user has made at least 1 comment"""
@@ -128,12 +132,17 @@ app = flask.Flask(__name__)
 
 @app.route("/")
 def index():
+    try:
+        page = int(flask.request.args.get("page", 0))
+    except ValueError:
+        flask.abort(404)
+
     users = []
     with db.connection(settings.SQLITE_URI, echo=True) as conn:
-        users = get_users(conn)
+        users = get_users(conn, page=page)
         stats = get_stats(conn)
 
-    return flask.render_template("index.html", users=users, stats=stats)
+    return flask.render_template("index.html", users=users, stats=stats, page=page)
 
 
 @app.route("/<username>")
@@ -146,7 +155,6 @@ def search(username: str):
     topics, posts_by_id = create_trees_from_rows(comments_rows)
 
     # TODO: filter on/off toggle
-    # TODO: open all by default toggle
     topics = filter_trees(topics, posts_by_id, username)
 
     return flask.render_template(

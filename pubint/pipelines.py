@@ -85,15 +85,20 @@ class SqlitePipeline(LoggingMixin):
                 # czy jakoś bardziej zawężone
                 # ale może bez sensu tak robić i lepiej zapisywać handle filmu i unique na parze
                 raise Duplicate
-            pdb.set_trace()
+            breakpoint()
+            pass
         except sqlite3.DatabaseError as exc:
-            pdb.set_trace()
+            breakpoint()
+            pass
             raise exc
         return item
 
-    def save(self, item):
-        # stmt = "INSERT OR REPLACE"  # TODO: switch as arg?
-        stmt = "INSERT"
+    def save(self, item, replace: bool = False):
+        if replace:
+            stmt = "INSERT OR REPLACE"
+        else:
+            stmt = "INSERT"
+
         stmt += """
             INTO comment(post_id, topic_url, topic_title, text_content,owner, position, indent, reply_to, reply_to_url)
             VALUES (:post_id, :topic_url, :topic_title, :text_content, :owner, :position, :indent, :reply_to, :reply_to_url)
