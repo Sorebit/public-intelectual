@@ -76,10 +76,10 @@ def create_trees_from_rows(rows: list) -> tuple[list[Tree], dict[str, Tree]]:
 
         if node["reply_to"] is None:
             # Node's owner was deleted or post was banned
-            up = latest_with_indent.get(node["indent"] - 1)
-            if up is None:
+            parent = latest_with_indent.get(node["indent"] - 1)
+            if parent is None:
                 breakpoint()
-            node["reply_to"] = up["post_id"]
+            node["reply_to"] = parent["post_id"]
 
         posts_by_id[node["reply_to"]]["replies"].append(node)
 
@@ -105,7 +105,6 @@ def filter_tree(root: Tree, nodes_by_id: dict[str, Tree], username: str) -> Tree
     by_indent_desc = sorted(owned_by_user, key=lambda node: -node["indent"])
     visited = set()
     def walk_to_root(node: Tree) -> None:
-        #breakpoint()
         if node["post_id"] in visited:
             return  # Reached already traversed path
         visited.add(node["post_id"])
