@@ -1,6 +1,6 @@
 import pytest
 
-from pubint.viewer import query, filter_tree, create_trees_from_rows, Tree, traverse
+from pubint.viewer import filter_tree, create_trees_from_rows, Tree, traverse
 
 
 @pytest.fixture
@@ -102,11 +102,6 @@ def tree_deleted_user():
         mk_node(206, None, 1, []),
     ])
 
-@pytest.fixture
-def tree_banned_comment():
-    return mk_node(
-
-    )
 
 @pytest.fixture
 def tree_monologue(name):
@@ -124,7 +119,6 @@ def test_can_transform_rows_into_tree(rows_1, tree_1):
     assert result == [tree_1]
 
 
-@pytest.mark.skip
 def test_create_trees_can_handle_deleted_users(rows_deleted_user, tree_deleted_user):
     result, _ = create_trees_from_rows(rows_deleted_user)
     assert result == [tree_deleted_user]

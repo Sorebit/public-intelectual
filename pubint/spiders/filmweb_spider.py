@@ -46,7 +46,6 @@ class FilmwebSpiderSpider(scrapy.Spider):
         self.skip_cached = False  # TODO: cli arg
 
     def start_requests(self) -> Iterable[Request]:
-        """Assumes beginning from discussion pages"""
         self.log(f"Total number of start URLs: {len(self.start_urls)}")
         for url, callback in self.start_urls:
             yield Request(url, dont_filter=True, callback=callback)

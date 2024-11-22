@@ -63,14 +63,25 @@ def create_trees_from_rows(rows: list) -> tuple[list[Tree], dict[str, Tree]]:
     """Expects list ordered by position with indent never increasing by more than 1"""
     roots = []
     posts_by_id = dict()
+    latest_with_indent = dict()
+
     for row in rows:
         node = {**row, "replies": []}
         posts_by_id[row["post_id"]] = node
+        latest_with_indent[node["indent"]] = node
+
+        if node["indent"] == 0:
+            roots.append(node)
+            continue
 
         if node["reply_to"] is None:
-            roots.append(node)
-        else:
-            posts_by_id[node["reply_to"]]["replies"].append(node)
+            # Node's owner was deleted or post was banned
+            up = latest_with_indent.get(node["indent"] - 1)
+            if up is None:
+                breakpoint()
+            node["reply_to"] = up["post_id"]
+
+        posts_by_id[node["reply_to"]]["replies"].append(node)
 
     return roots, posts_by_id
 
@@ -81,7 +92,7 @@ def traverse(node: Tree, fn) -> None:
         traverse(child, fn)
 
 
-def filter_tree(root: Tree, nodes_by_id: dict[str, Tree], username: str) -> Tree:
+def filter_tree(root: Tree, nodes_by_id: dict[str, Tree], username: str) -> Tree | None:
     owned_by_user = []  # This will contain all nodes with owner == username
 
     def mark(node: Tree) -> None:
@@ -166,4 +177,5 @@ def search(username: str):
         comments=topics,
         stats=stats,
         no_user_placeholder="użytkownik usunięty",
+        banned_text_placeholder="Wpis został zablokowany z uwagi na jego niezgodność z regulaminem",
     )

@@ -23,7 +23,14 @@
       &middot; {{ c.position }} ⇥ {{ c.indent }}
   </summary>
   <div class="comment__body">
-    <p class="comment__text">{{ c.text_content|safe }}</p>
+    <p class="comment__text">
+      {% if c.text_content %}
+      {{ c.text_content|safe }}
+      {% else %}
+      <span class="comment__banned">{{ banned_text_placeholder }}</span>
+      {% endif %}
+    </p>
+
     <!-- replies -->
     {% for rc in c.replies %}
       {{ comment(rc, highlight_name, True) }}
@@ -34,7 +41,7 @@
 
 {% block body %}
 <h1>
-  <a href="/">public-intelectual</a> &middot;
+  {{ home() }} &middot;
   Scrapped {{ stats.total_posts }} comments in {{ stats.total_topics }} topics posted by <span class="badge badge-hl">{{ username }}</span>
 </h1>
 

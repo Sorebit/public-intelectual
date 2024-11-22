@@ -1,7 +1,13 @@
+{% macro sitename() %}public-intellectual{% endmacro %}
+
+{% macro home() %}
+<a href="/">{{ sitename() }}</a>
+{% endmacro %}
+
 <head>
   {% block head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <title>public-intelectual</title>
+  <title>{{ sitename() }}</title>
   <meta charset="utf-8">
   {% endblock %}
 </head>

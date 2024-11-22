@@ -76,6 +76,11 @@ pre {
   padding: var(--tx--padding);
 }
 
+.comment__banned {
+  font-style: italic;
+  color: var(--color-gray-600);
+}
+
 .badge {
   padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);
   border-radius: var(--bs-badge-border-radius);
