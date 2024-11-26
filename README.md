@@ -1,4 +1,4 @@
-# public-intelectual
+# public-intellectual
 
 ```shell
 $ pip install -r requirements.txt
